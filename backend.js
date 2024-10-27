@@ -1,8 +1,9 @@
 import express from "express";
 import sqlite3 from 'sqlite3';
+import bcrypt from 'bcryptjs';
 
 const app = express();
-app.use(express.json()); // Add JSON body parsing middleware
+app.use(express.json()); 
 
 const db = new sqlite3.Database('./DATABASE.db');
 
@@ -13,36 +14,41 @@ const port = process.env.Port || 3001;
 
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10); // Hash the password here
   db.get('SELECT * FROM users WHERE username =?', [username], (err, row) => {
     if (err) {
       res.status(500).send({ message: 'Database error' });
     } else if (row) {
       res.send({ message: 'Username already exists' });
     } else {
-      db.run('INSERT INTO users (username, password) VALUES (?,?)', [username, password], (err) => {
+      db.run('INSERT INTO users (username, password) VALUES (?,?)', [username, hashedPassword], (err) => {
         if (err) {
           res.status(500).send({ message: 'Database error' });
         } else {
-          res.send({ message: 'User created successfully' });
+          res.send({ message: 'User  created successfully' });
         }
       });
     }
   });
 });
-
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  db.get('SELECT * FROM users WHERE username =? AND password =?', [username, password], (err, row) => {
-    if (err) {
-      res.status(500).send({ message: 'Database error' });
-    } else if (row) {
-      res.send({ authenticated: true });
-    } else {
-      res.send({ authenticated: false });
-    }
+  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+      if (err) {
+          res.status(500).send({ message: 'Database error' });
+      } else if (!row) {
+          res.send({ authenticated: false });
+      } else {
+          // Compare the provided password with the stored hashed password
+          const isMatch = bcrypt.compareSync(password, row.password);
+          if (isMatch) {
+              res.send({ authenticated: true });
+          } else {
+              res.send({ authenticated: false });
+          }
+      }
   });
 });
-
 app.post('/menu', (req, res) => {
   const { buttonname } = req.body;
   db.get('SELECT * FROM characters WHERE name = ?', [buttonname], (err, row) => {
