@@ -8,7 +8,7 @@ app.use(express.json());
 const db = new sqlite3.Database('./DATABASE.db');
 
 db.run('CREATE TABLE IF NOT EXISTS users(username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL)');
-db.run('CREATE TABLE IF NOT EXISTS characters(name text NOT NULL UNIQUE, adventurername text NOT NULL UNIQUE, classlevel TEXT NOT NULL, background TEXT NOT NULL, race TEXT NOT NULL, alignment TEXT NOT NULL, experience INTEGER, strengthmod TEXT NOT NULL, strengthnumber INTEGER NOT NULL, dexmod TEXT NOT NULL, dexnumber INTEGER NOT NULL, username	TEXT NOT NULL, constitutionmod TEXT NOT NULL, constitutionnumber INTEGER NOT NULL,intelligencemod TEXT NOT NULL, intelligencenumber INTEGER NOT NULL, wisdommod TEXT NOT NULL, wisdomnumber INTEGER NOT NULL, charismamod TEXT NOT NULL, charismanumber INTEGER NOT NULL, inspiration INTEGER, proficiencybonus TEXT NOT NULL, strengthsavingthrow TEXT,dexteritysavingthrow TEXT,constitutionsavingthrow TEXT,intelligencesavingthrow TEXT,wisdomsavingthrow TEXT,charismasavingthrow TEXT,acrobaticscheck TEXT,animalhandling TEXT,arcana TEXT,athletics TEXT,deception TEXT,history TEXT,insight TEXT,intimidation TEXT,investigation TEXT,medicine TEXT,nature TEXT,perception TEXT,perfomance TEXT NOT NULL,persuasion TEXT NOT NULL,religion TEXT NOT NULL,sleightofhands TEXT NOT NULL,stealth TEXT NOT NULL,survival TEXT NOT NULL,passivewisdom INTEGER NOT NULL,proficienciestextarea TEXT NOT NULL,armor INTEGER NOT NULL,initiative TEXT NOT NULL,speed INTEGER NOT NULL,currenthitpoints TEXT NOT NULL,temporaryhitpoints TEXT NOT NULL,hitdice TEXT NOT NULL,weapon1 TEXT,atkbonus1 TEXT,dmg1 TEXT,weapon2 TEXT,atkbonus2 TEXT,dmg2 TEXT ,weapon3 TEXT,atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT,personality TEXT NOT NULL,ideals TEXT NOT NULL,bonds TEXT NOT NULL,flaws TEXT NOT NULL , FOREIGN KEY(username) REFERENCES users (username))')
+db.run('CREATE TABLE IF NOT EXISTS characters(name text NOT NULL UNIQUE, adventurername text UNIQUE, classlevel TEXT, background TEXT, race TEXT, alignment TEXT, experience INTEGER, strengthmod TEXT, strengthnumber INTEGER, dexmod TEXT, dexnumber INTEGER, username	TEXT, constitutionmod TEXT, constitutionnumber INTEGER,intelligencemod TEXT, intelligencenumber INTEGER, wisdommod TEXT, wisdomnumber INTEGER , charismamod TEXT , charismanumber INTEGER , inspiration INTEGER, proficiencybonus TEXT , strengthsavingthrow TEXT,dexteritysavingthrow TEXT,constitutionsavingthrow TEXT,intelligencesavingthrow TEXT,wisdomsavingthrow TEXT,charismasavingthrow TEXT,acrobaticscheck TEXT,animalhandling TEXT,arcana TEXT,athletics TEXT,deception TEXT,history TEXT,insight TEXT,intimidation TEXT,investigation TEXT,medicine TEXT,nature TEXT,perception TEXT,perfomance TEXT ,persuasion TEXT ,religion TEXT ,sleightofhands TEXT ,stealth TEXT ,survival TEXT ,passivewisdom INTEGER ,proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER ,currenthitpoints TEXT ,temporaryhitpoints TEXT ,hitdice TEXT,weapon1 TEXT,atkbonus1 TEXT,dmg1 TEXT,weapon2 TEXT,atkbonus2 TEXT,dmg2 TEXT ,weapon3 TEXT,atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT,personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, FOREIGN KEY(username) REFERENCES users (username))')
 
 const port = process.env.Port || 3001;
 
@@ -49,16 +49,19 @@ app.post('/login', (req, res) => {
       }
   });
 });
+
 app.post('/menu', (req, res) => {
-  const { buttonname } = req.body;
+  const { buttonname, username } = req.body;
   db.get('SELECT * FROM characters WHERE name = ?', [buttonname], (err, row) => {
     if (err) {
+      console.error('Database error on SELECT:', err); // Log the error
       res.status(500).send({ message: 'Database error' });
     } else if (row) {
-      res.send({ message: 'Character already exist' });
+      res.send({ message: 'Character already exists' });
     } else {
-      db.run('INSERT INTO characters (name) VALUES (?)', [buttonname], (err, row) => {
+      db.run('INSERT INTO characters (name, username) VALUES (?, ?)', [buttonname, username], (err) => {
         if (err) {
+          console.error('Database error on INSERT:', err); // Log the error
           res.status(500).send({ message: 'Database error' });
         } else {
           res.send({ message: 'Character created successfully' });
