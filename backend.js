@@ -3,7 +3,7 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcryptjs';
 
 const app = express();
-app.use(express.json()); 
+app.use(express.json());
 
 const db = new sqlite3.Database('./DATABASE.db');
 
@@ -34,19 +34,19 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-      if (err) {
-          res.status(500).send({ message: 'Database error' });
-      } else if (!row) {
-          res.send({ authenticated: false });
+    if (err) {
+      res.status(500).send({ message: 'Database error' });
+    } else if (!row) {
+      res.send({ authenticated: false });
+    } else {
+      // Compare the provided password with the stored hashed password
+      const isMatch = bcrypt.compareSync(password, row.password);
+      if (isMatch) {
+        res.send({ authenticated: true });
       } else {
-          // Compare the provided password with the stored hashed password
-          const isMatch = bcrypt.compareSync(password, row.password);
-          if (isMatch) {
-              res.send({ authenticated: true });
-          } else {
-              res.send({ authenticated: false });
-          }
+        res.send({ authenticated: false });
       }
+    }
   });
 });
 
@@ -83,10 +83,9 @@ app.get('/menu/:username', (req, res) => {
   });
 });
 
-app.post('/sheet', (req,res)=>{
- const { name, classlevel } =req.body;
-
-  db.run('UPDATE characters SET classlevel = ? WHERE name = ?', [classlevel, name], (err) => {
+app.post('/sheet', (req, res) => {
+  const { name, classlevel, background } = req.body;
+  db.run('UPDATE characters SET classlevel = ?, background = ? WHERE name = ?', [classlevel, background, name], (err) => {
     if (err) {
       console.error('Database error on INSERT:', err); // Log the error
       res.status(500).send({ message: 'Database error' });
@@ -94,9 +93,23 @@ app.post('/sheet', (req,res)=>{
       res.send({ message: 'Charactes data saved succesfully' });
     }
   });
- }
- 
+}
 );
+
+app.get('/sheet/:name', (req, res) => {
+  const name = req.params.name
+  db.get('SELECT * FROM characters WHERE name = ?', [name], (err, rows) => {
+    if (err) {
+      console.error('Database error on SELECT:', err);
+      res.status(500).send({ message: 'Database error' });
+    } else {
+      res.send(rows);
+      console.log;
+    }
+  });
+});
+
+
 
 
 app.listen(port, () => {
