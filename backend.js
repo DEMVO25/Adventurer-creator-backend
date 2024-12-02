@@ -84,10 +84,10 @@ app.get('/menu/:username', (req, res) => {
 });
 
 app.post('/sheet', (req, res) => {
-  const { name, classlevel, background } = req.body;
-  db.run('UPDATE characters SET classlevel = ?, background = ? WHERE name = ?', [classlevel, background, name], (err) => {
+  const { name, classlevel, background, race, alignment, experience, strengthmod, strengthnumber, dexteritymod, dexteritynumber, constitutionmod, constitutionnumber, intelligencemod, intelligencenumber, wisdommod, wisdomnumber, charismamod, charismanumber, inspiration, proficiencybonus, strengthsavingthrow, dexteritysavingthrow, constitutionsavingthrow, intelligencesavingthrow, wisdomsavingthrow, charismasavingthrow, acrobaticscheck } = req.body;
+  db.run('UPDATE characters SET classlevel = ?, background = ?, race = ?, alignment = ?, experience = ?, strengthmod = ?, strengthnumber = ?, dexmod = ?, dexnumber =?, constitutionmod = ?, constitutionnumber = ?, intelligencemod = ?, intelligencenumber = ?, wisdommod = ?, wisdomnumber = ?, charismamod = ?, charismanumber = ?, inspiration = ?, proficiencybonus = ?, strengthsavingthrow = ?, dexteritysavingthrow = ?, constitutionsavingthrow = ?, intelligencesavingthrow = ?, wisdomsavingthrow = ?, charismasavingthrow = ?, acrobaticscheck = ? WHERE name = ?', [classlevel, background, race, alignment, experience, strengthmod, strengthnumber, dexteritymod, dexteritynumber, constitutionmod, constitutionnumber, intelligencemod, intelligencenumber, wisdommod, wisdomnumber, charismamod, charismanumber, inspiration, proficiencybonus, strengthsavingthrow, dexteritysavingthrow, constitutionsavingthrow, intelligencesavingthrow, wisdomsavingthrow, charismasavingthrow, acrobaticscheck,  name], (err) => {
     if (err) {
-      console.error('Database error on INSERT:', err); // Log the error
+      console.error('Database error on INSERT:', err);
       res.status(500).send({ message: 'Database error' });
     } else {
       res.send({ message: 'Charactes data saved succesfully' });
