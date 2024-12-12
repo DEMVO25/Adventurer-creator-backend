@@ -54,14 +54,14 @@ app.post('/menu', (req, res) => {
   const { buttonname, username } = req.body;
   db.get('SELECT * FROM characters WHERE name = ?', [buttonname], (err, row) => {
     if (err) {
-      console.error('Database error on SELECT:', err); // Log the error
+      console.error('Database error on SELECT:', err); 
       res.status(500).send({ message: 'Database error' });
     } else if (row) {
       res.send({ message: 'Character already exists' });
     } else {
       db.run('INSERT INTO characters (name, username) VALUES (?, ?)', [buttonname, username], (err) => {
         if (err) {
-          console.error('Database error on INSERT:', err); // Log the error
+          console.error('Database error on INSERT:', err);
           res.status(500).send({ message: 'Database error' });
         } else {
           res.send({ message: 'Character created successfully' });
