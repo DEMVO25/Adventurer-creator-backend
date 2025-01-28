@@ -23,7 +23,7 @@ db.run('CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT,
   'personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, features TEXT, FOREIGN KEY(username) REFERENCES users (username))')
 db.run('CREATE TABLE IF NOT EXISTS spellsheet(cantrip TEXT, lvl1spells TEXT, lvl2spells TEXT, lvl3spells TEXT, lvl4spells TEXT, lvl5spells TEXT, lvl6spells TEXT, lvl7spells TEXT, lvl8spells TEXT, lvl9spells TEXT,name TEXT, FOREIGN KEY(name) REFERENCES characters (name))')
 
-const port = process.env.Port || 3001;
+const port = process.env.Port || 3002;
 
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
@@ -134,6 +134,18 @@ app.post('/spellsheet', (req, res)=>{
   });
 }
 )
+
+app.get('/spellsheet/:name', (req, res)=>{
+  const name = req.params.name
+  db.get('SELECT * FROM spellsheet WHERE name = ?', [name], (err, rows) => {
+    if (err) {
+      console.error('Database error on SELECT:', err);
+      res.status(500).send({ message: 'Database error' });
+    } else {
+      res.send(rows);
+    }
+  });
+});
 
 
 app.listen(port, () => {
