@@ -21,9 +21,9 @@ db.run('CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT,
   'proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER , currenthitpoints TEXT , temporaryhitpoints TEXT ,hitdice TEXT,weapon1 TEXT, atkbonus1 TEXT, '+
   'dmg1 TEXT,weapon2 TEXT,atkbonus2 TEXT,dmg2 TEXT ,weapon3 TEXT,atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT, '+
   'personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, features TEXT, FOREIGN KEY(username) REFERENCES users (username))')
-db.run('CREATE TABLE IF NOT EXISTS spellsheet(cantrip TEXT, lvl1spells TEXT, lvl2spells TEXT, lvl3spells TEXT, lvl4spells TEXT, lvl5spells TEXT, lvl6spells TEXT, lvl7spells TEXT, lvl8spells TEXT, lvl9spells TEXT,name TEXT, FOREIGN KEY(name) REFERENCES characters (name))')
+db.run('CREATE TABLE IF NOT EXISTS spellsheet(spellcastingability INTEGER, spellsavedc INTEGER, spellattackbonus TEXT, cantrip TEXT, lvl1spells TEXT, lvl2spells TEXT, lvl3spells TEXT, lvl4spells TEXT, lvl5spells TEXT, lvl6spells TEXT, lvl7spells TEXT, lvl8spells TEXT, lvl9spells TEXT,name TEXT, FOREIGN KEY(name) REFERENCES characters (name))')
 
-const port = process.env.Port || 3002;
+const port = process.env.Port || 3001;
 
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
@@ -123,8 +123,8 @@ app.get('/sheet/:name', (req, res) => {
 });
 
 app.post('/spellsheet', (req, res)=>{
-  const {name, cantrip, lvl1spells, lvl2spells, lvl3spells, lvl4spells, lvl5spells, lvl6spells, lvl7spells, lvl8spells, lvl9spells } = req.body;
-  db.run('UPDATE spellsheet SET cantrip = ? , lvl1spells = ?, lvl2spells = ?, lvl3spells = ?, lvl4spells = ?, lvl5spells = ?, lvl6spells = ?, lvl7spells = ?, lvl8spells = ?, lvl9spells = ? WHERE name = ?', [cantrip, lvl1spells, lvl2spells, lvl3spells, lvl4spells, lvl5spells, lvl6spells, lvl7spells, lvl8spells, lvl9spells, name], (err) => {
+  const {name, spellcastingability, spellsavedc, spellattackbonus, cantrip, lvl1spells, lvl2spells, lvl3spells, lvl4spells, lvl5spells, lvl6spells, lvl7spells, lvl8spells, lvl9spells } = req.body;
+  db.run('UPDATE spellsheet SET spellcastingability = ? , spellsavedc = ? , spellattackbonus = ? , cantrip = ? , lvl1spells = ?, lvl2spells = ?, lvl3spells = ?, lvl4spells = ?, lvl5spells = ?, lvl6spells = ?, lvl7spells = ?, lvl8spells = ?, lvl9spells = ? WHERE name = ?', [spellcastingability, spellsavedc, spellattackbonus, cantrip, lvl1spells, lvl2spells, lvl3spells, lvl4spells, lvl5spells, lvl6spells, lvl7spells, lvl8spells, lvl9spells, name], (err) => {
     if (err) {
       console.error('Database error on UPDATE:', err);
       res.status(500).send({ message: 'Database error' });
