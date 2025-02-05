@@ -115,6 +115,7 @@ app.delete("/menu/:name", (req, res) => {
       res.send({ message: "Character deleted successfully" });
     }
   });
+  db.run("DELETE FROM spellsheet WHERE name = ?", [name], (err) => {});
 });
 
 // UPDATE a character name
@@ -141,10 +142,7 @@ app.put("/menu/:name", (req, res) => {
         }
       }
     );
-    db.run(
-      "UPDATE spellsheet SET name = ? WHERE name = ?",
-      [newName, name],
-    );
+    db.run("UPDATE spellsheet SET name = ? WHERE name = ?", [newName, name]);
   });
 });
 
@@ -425,28 +423,19 @@ app.get("/spellsheet/:name", (req, res) => {
       console.error("Database error on SELECT:", err);
       res.status(500).send({ message: "Database error" });
     } else if (!rows) {
-      db.run(
-        "INSERT INTO spellsheet (name) VALUES (?)",
-        [name],
-        (err) => {
-          if (err) {
-            console.error("Database error on INSERT:", err);
-            res.status(500).send({ message: "Database error" });
-          } else {
-            db.get(
-              "SELECT * FROM spellsheet WHERE name = ?",
-              [name],
-              (rows) => {
-                res.send(rows);
-              }
-            );
-          }
+      db.run("INSERT INTO spellsheet (name) VALUES (?)", [name], (err) => {
+        if (err) {
+          console.error("Database error on INSERT:", err);
+          res.status(500).send({ message: "Database error" });
+        } else {
+          db.get("SELECT * FROM spellsheet WHERE name = ?", [name], (err,rows) => {
+            res.send(rows);
+          });
         }
-      );
+      });
     } else {
       res.send(rows);
     }
-    
   });
 });
 
