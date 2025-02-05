@@ -79,7 +79,10 @@ app.post("/menu", (req, res) => {
     "SELECT * FROM characters WHERE name = ?",
     [buttonname],
     (err, row) => {
-      if (err) {
+      if (!buttonname){
+        console.error("Database error on SELECT:", err);
+        res.status(400).send({ message: "Character name is required" });
+      } else if (err) {
         console.error("Database error on SELECT:", err);
         res.status(500).send({ message: "Database error" });
       } else if (row) {
