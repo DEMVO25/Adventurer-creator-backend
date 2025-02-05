@@ -105,6 +105,39 @@ app.post("/menu", (req, res) => {
   );
 });
 
+app.delete("/menu/:name", (req, res) => {
+  const { name } = req.params;
+  db.run("DELETE FROM characters WHERE name = ?", [name], (err) => {
+    if (err) {
+      console.error("Database error on DELETE:", err);
+      res.status(500).send({ message: "Database error" });
+    } else {
+      res.send({ message: "Character deleted successfully" });
+    }
+  });
+});
+
+// UPDATE a character name
+app.put("/menu/:name", (req, res) => {
+  const { name } = req.params;
+  const { newName } = req.body;
+
+  db.get("SELECT * FROM characters WHERE name = ?", [newName], (err, row) => {
+    if (row) {
+      return res.status(400).send({ message: "Character name already exists!" });
+    }
+
+    db.run("UPDATE characters SET name = ? WHERE name = ?", [newName, name], (err) => {
+      if (err) {
+        console.error("Database error on UPDATE:", err);
+        res.status(500).send({ message: "Database error" });
+      } else {
+        res.send({ message: "Character updated successfully", newName });
+      }
+    });
+  });
+});
+
 app.get("/menu/:username", (req, res) => {
   const username = req.params.username;
   db.all(
@@ -374,6 +407,7 @@ app.post("/spellsheet", (req, res) => {
     }
   );
 });
+
 
 app.get("/spellsheet/:name", (req, res) => {
   const name = req.params.name;
