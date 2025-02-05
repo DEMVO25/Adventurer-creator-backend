@@ -79,7 +79,7 @@ app.post("/menu", (req, res) => {
     "SELECT * FROM characters WHERE name = ?",
     [buttonname],
     (err, row) => {
-      if (!buttonname){
+      if (!buttonname) {
         console.error("Database error on SELECT:", err);
         res.status(400).send({ message: "Character name is required" });
       } else if (err) {
@@ -124,17 +124,27 @@ app.put("/menu/:name", (req, res) => {
 
   db.get("SELECT * FROM characters WHERE name = ?", [newName], (err, row) => {
     if (row) {
-      return res.status(400).send({ message: "Character name already exists!" });
+      return res
+        .status(400)
+        .send({ message: "Character name already exists!" });
     }
 
-    db.run("UPDATE characters SET name = ? WHERE name = ?", [newName, name], (err) => {
-      if (err) {
-        console.error("Database error on UPDATE:", err);
-        res.status(500).send({ message: "Database error" });
-      } else {
-        res.send({ message: "Character updated successfully", newName });
+    db.run(
+      "UPDATE characters SET name = ? WHERE name = ?",
+      [newName, name],
+      (err) => {
+        if (err) {
+          console.error("Database error on UPDATE:", err);
+          res.status(500).send({ message: "Database error" });
+        } else {
+          res.send({ message: "Character updated successfully", newName });
+        }
       }
-    });
+    );
+    db.run(
+      "UPDATE spellsheet SET name = ? WHERE name = ?",
+      [newName, name],
+    );
   });
 });
 
@@ -408,26 +418,35 @@ app.post("/spellsheet", (req, res) => {
   );
 });
 
-
 app.get("/spellsheet/:name", (req, res) => {
   const name = req.params.name;
   db.get("SELECT * FROM spellsheet WHERE name = ?", [name], (err, rows) => {
     if (err) {
       console.error("Database error on SELECT:", err);
       res.status(500).send({ message: "Database error" });
+    } else if (!rows) {
+      db.run(
+        "INSERT INTO spellsheet (name) VALUES (?)",
+        [name],
+        (err) => {
+          if (err) {
+            console.error("Database error on INSERT:", err);
+            res.status(500).send({ message: "Database error" });
+          } else {
+            db.get(
+              "SELECT * FROM spellsheet WHERE name = ?",
+              [name],
+              (rows) => {
+                res.send(rows);
+              }
+            );
+          }
+        }
+      );
     } else {
       res.send(rows);
     }
-    if (!rows) {
-      db.run("INSERT INTO spellsheet (name) VALUES (?)", [name], (err) => {
-        if (err) {
-          console.error("Database error on INSERT:", err);
-          res.status(500).send({ message: "Database error" });
-        } else {
-          res.send({ message: "New spellsheet created successfully", name });
-        }
-      });
-    }
+    
   });
 });
 
