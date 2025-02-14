@@ -1,14 +1,15 @@
 import express from "express";
 import sqlite3 from "sqlite3";
 import bcrypt from "bcryptjs";
-
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 const app = express();
 app.use(express.json());
 
 const db = new sqlite3.Database("./DATABASE.db");
 
 db.run(
-  "CREATE TABLE IF NOT EXISTS users(username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL)"
+  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL)"
 );
 db.run(
   "CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT, background TEXT, race TEXT, alignment TEXT, experience INTEGER," +
@@ -32,27 +33,31 @@ db.run(
 const port = process.env.Port || 3001;
 
 app.post("/register", (req, res) => {
-  const { username, password } = req.body;
+  const { email, username, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
-  db.get("SELECT * FROM users WHERE username =?", [username], (err, row) => {
-    if (err) {
-      res.status(500).send({ message: "Database error" });
-    } else if (row) {
-      res.send({ message: "Username already exists" });
-    } else {
-      db.run(
-        "INSERT INTO users (username, password) VALUES (?,?)",
-        [username, hashedPassword],
-        (err) => {
-          if (err) {
-            res.status(500).send({ message: "Database error" });
-          } else {
-            res.send({ message: "User  created successfully" });
+  db.get(
+    "SELECT * FROM users WHERE username =? OR email = ?",
+    [username, email],
+    (err, row) => {
+      if (err) {
+        res.status(500).send({ message: "Database error" });
+      } else if (row) {
+        res.send({ message: "Username or Email already exists" });
+      } else {
+        db.run(
+          "INSERT INTO users (email, username, password) VALUES (?,?,?)",
+          [email, username, hashedPassword],
+          (err) => {
+            if (err) {
+              res.status(500).send({ message: "Database error" });
+            } else {
+              res.send({ message: "User  created successfully" });
+            }
           }
-        }
-      );
+        );
+      }
     }
-  });
+  );
 });
 
 app.post("/login", (req, res) => {
@@ -428,9 +433,13 @@ app.get("/spellsheet/:name", (req, res) => {
           console.error("Database error on INSERT:", err);
           res.status(500).send({ message: "Database error" });
         } else {
-          db.get("SELECT * FROM spellsheet WHERE name = ?", [name], (err,rows) => {
-            res.send(rows);
-          });
+          db.get(
+            "SELECT * FROM spellsheet WHERE name = ?",
+            [name],
+            (err, rows) => {
+              res.send(rows);
+            }
+          );
         }
       });
     } else {
@@ -438,6 +447,60 @@ app.get("/spellsheet/:name", (req, res) => {
     }
   });
 });
+
+app.get("/passwordreset/:username", (req, res) => {
+  const username = req.params.username;
+
+  db.get(
+    "SELECT email FROM users WHERE username = ?",
+    [username],
+    (err, row) => {
+      if (err) {
+        console.error("Database error on SELECT:", err);
+        res.status(500).send({ message: "Database error" });
+      } else if (!row) {
+        res.status(404).send({ message: "Username not found" });
+      } else {
+        res.send(row.email);
+      }
+    }
+  );
+});
+
+// // 📌 Route to Generate OTP
+// app.post("/generate-otp", (req, res) => {
+//   const { email } = req.body;
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
+//   otpStore[email] = otp; // Store OTP temporarily
+
+//   // Send OTP via Email (using nodemailer)
+//   let transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: { user: "your_email@gmail.com", pass: "your_password" },
+//   });
+
+//   let mailOptions = {
+//     from: "your_email@gmail.com",
+//     to: email,
+//     subject: "Your OTP Code",
+//     text: `Your OTP code is ${otp}`,
+//   };
+
+//   transporter.sendMail(mailOptions, (error, info) => {
+//     if (error) return res.status(500).json({ message: "Email error" });
+//     res.json({ message: "OTP sent to email" });
+//   });
+// });
+
+// // 📌 Route to Verify OTP
+// app.post("/verify-otp", (req, res) => {
+//   const { email, otp } = req.body;
+//   if (otpStore[email] === otp) {
+//     delete otpStore[email]; // Remove OTP after successful verification
+//     return res.json({ message: "OTP verified successfully" });
+//   }
+//   res.status(400).json({ message: "Invalid OTP" });
+// });
 
 app.listen(port, () => {
   console.log(`Serve at http://localhost:${port}`);
