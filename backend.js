@@ -3,10 +3,23 @@ import sqlite3 from "sqlite3";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
 const app = express();
 app.use(express.json());
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const db = new sqlite3.Database("./DATABASE.db");
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "justfortest383@gmail.com",
+    pass: "owib ifdv ptqk bgvk",
+  },
+});
 
 db.run(
   "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL)"
@@ -123,7 +136,6 @@ app.delete("/menu/:name", (req, res) => {
   db.run("DELETE FROM spellsheet WHERE name = ?", [name], (err) => {});
 });
 
-// UPDATE a character name
 app.put("/menu/:name", (req, res) => {
   const { name } = req.params;
   const { newName } = req.body;
@@ -448,59 +460,45 @@ app.get("/spellsheet/:name", (req, res) => {
   });
 });
 
-app.get("/passwordreset/:username", (req, res) => {
+app.post("/passwordreset/:username", async (req, res) => {
   const username = req.params.username;
-
   db.get(
     "SELECT email FROM users WHERE username = ?",
     [username],
-    (err, row) => {
+    async (err, row) => {
       if (err) {
         console.error("Database error on SELECT:", err);
         res.status(500).send({ message: "Database error" });
       } else if (!row) {
         res.status(404).send({ message: "Username not found" });
       } else {
-        res.send(row.email);
+        const mailOptions = {
+          from: "justfortest383@gmail.com",
+          to: row.email,
+          subject: "Test2",
+          html: '<p><img width={100} src="cid:test"/></p>',
+          attachments: [{
+              filename: 'image.jpg',
+              path:path.join(__dirname, "test.jpg"),
+              cid: 'test'
+          }]
+        };
+        console.log(mailOptions);
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error("Error sending email:", error);
+            return res.status(500).send({ message: "Error sending email" });
+          }
+          console.log("Email sent:", info.response);
+          res.send({ message: "OTP sent to email", success: true });
+        });
+        console.log(row.email);
+        const resetToken = crypto.randomInt(100000, 999999).toString();
+        const resetTokenExpire = Date.now() + 15 * 60 * 1000;
       }
     }
   );
 });
-
-// // 📌 Route to Generate OTP
-// app.post("/generate-otp", (req, res) => {
-//   const { email } = req.body;
-//   const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
-//   otpStore[email] = otp; // Store OTP temporarily
-
-//   // Send OTP via Email (using nodemailer)
-//   let transporter = nodemailer.createTransport({
-//     service: "gmail",
-//     auth: { user: "your_email@gmail.com", pass: "your_password" },
-//   });
-
-//   let mailOptions = {
-//     from: "your_email@gmail.com",
-//     to: email,
-//     subject: "Your OTP Code",
-//     text: `Your OTP code is ${otp}`,
-//   };
-
-//   transporter.sendMail(mailOptions, (error, info) => {
-//     if (error) return res.status(500).json({ message: "Email error" });
-//     res.json({ message: "OTP sent to email" });
-//   });
-// });
-
-// // 📌 Route to Verify OTP
-// app.post("/verify-otp", (req, res) => {
-//   const { email, otp } = req.body;
-//   if (otpStore[email] === otp) {
-//     delete otpStore[email]; // Remove OTP after successful verification
-//     return res.json({ message: "OTP verified successfully" });
-//   }
-//   res.status(400).json({ message: "Invalid OTP" });
-// });
 
 app.listen(port, () => {
   console.log(`Serve at http://localhost:${port}`);
