@@ -12,7 +12,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const db = new sqlite3.Database("./DATABASE.db");
 
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -22,7 +21,7 @@ const transporter = nodemailer.createTransport({
 });
 
 db.run(
-  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL)"
+  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL, resetToken TEXT, resetTokenExpires INTEGER)"
 );
 db.run(
   "CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT, background TEXT, race TEXT, alignment TEXT, experience INTEGER," +
@@ -462,42 +461,94 @@ app.get("/spellsheet/:name", (req, res) => {
 
 app.post("/passwordreset/:username", async (req, res) => {
   const username = req.params.username;
+  const resetToken = crypto.randomInt(100000, 999999).toString();
+  const resetTokenExpires = Date.now() + 15 * 60 * 1000; // 15 mins expiry
+
   db.get(
     "SELECT email FROM users WHERE username = ?",
     [username],
     async (err, row) => {
-      if (err) {
-        console.error("Database error on SELECT:", err);
-        res.status(500).send({ message: "Database error" });
-      } else if (!row) {
-        res.status(404).send({ message: "Username not found" });
-      } else {
-        const mailOptions = {
-          from: "justfortest383@gmail.com",
-          to: row.email,
-          subject: "Test2",
-          html: '<p><img width={100} src="cid:test"/></p>',
-          attachments: [{
-              filename: 'image.jpg',
-              path:path.join(__dirname, "test.jpg"),
-              cid: 'test'
-          }]
-        };
-        console.log(mailOptions);
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error("Error sending email:", error);
-            return res.status(500).send({ message: "Error sending email" });
-          }
-          console.log("Email sent:", info.response);
-          res.send({ message: "OTP sent to email", success: true });
-        });
-        console.log(row.email);
-        const resetToken = crypto.randomInt(100000, 999999).toString();
-        const resetTokenExpire = Date.now() + 15 * 60 * 1000;
-      }
+      if (err) return res.status(500).send({ message: "Database error" });
+      if (!row) return res.status(404).send({ message: "Username not found" });
+
+      db.run(
+        "UPDATE users SET resetToken = ?, resetTokenExpires = ? WHERE username = ?",
+        [resetToken, resetTokenExpires, username],
+        (updateErr) => {
+          if (updateErr)
+            return res.status(500).send({ message: "Database error" });
+
+          const mailOptions = {
+            from: "justfortest383@gmail.com",
+            to: row.email,
+            subject: "Test2",
+            html: `<p>Your OTP Code: ${resetToken}</p><p><img width={100} src="cid:test"/></p>`,
+            attachments: [
+              {
+                filename: "image.jpg",
+                path: path.join(__dirname, "test.jpg"),
+                cid: "test",
+              },
+            ],
+          };
+          transporter.sendMail(mailOptions, (error) => {
+            if (error)
+              return res.status(500).send({ message: "Error sending email" });
+
+            res.send({
+              message: "OTP sent to email",
+              success: true,
+              resetToken,
+            }); // ⚠️ Remove resetToken in production
+          });
+        }
+      );
     }
   );
+});
+
+app.post("/verifyotp", async (req, res) => {
+  const { username, otp } = req.body;
+
+  db.get(
+    "SELECT resetToken, resetTokenExpires FROM users WHERE username = ?",
+    [username],
+    (err, row) => {
+      if (err) return res.status(500).send({ message: "Database error" });
+      if (!row) return res.status(404).send({ message: "Username not found" });
+      if (!row.resetToken || Date.now() > Number(row.resetTokenExpires)) {
+        return res.status(400).send({ message: "OTP expired or invalid" });
+      }
+      if (row.resetToken !== otp) {
+        return res.status(400).send({ message: "Incorrect OTP" });
+      }
+
+      res.send({ message: "OTP verified successfully", success: true });
+    }
+  );
+});
+
+app.post("/updatepassword", async (req, res) => {
+  const { username, newPassword } = req.body;
+
+  if (!newPassword) {
+    return res.status(400).send({ message: "New password is required" }); // 🚨 Prevents undefined errors
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    db.run("UPDATE users SET password = ?, resetToken = NULL, resetTokenExpires = NULL WHERE username = ?", 
+      [hashedPassword, username], 
+      (err) => {
+        if (err) return res.status(500).send({ message: "Database error" });
+
+        res.send({ message: "Password updated successfully", success: true });
+    });
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    res.status(500).send({ message: "Server error while updating password" });
+  }
 });
 
 app.listen(port, () => {
