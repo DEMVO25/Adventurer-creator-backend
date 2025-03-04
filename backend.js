@@ -33,8 +33,9 @@ db.run(
     " history TEXT, insightcheck BOOL ,insight TEXT, intimidationcheck BOOL, intimidation TEXT, investigationcheck BOOL, investigation TEXT, medicinecheck BOOL, medicine TEXT, " +
     " naturecheck BOOL,nature TEXT, perceptioncheck BOOL, perception TEXT, perfomancecheck BOOL, perfomance TEXT , persuasioncheck BOOL, persuasion TEXT , religioncheck BOOL, " +
     " religion TEXT , sleightofhandscheck BOOL , sleightofhands TEXT , stealthcheck BOOL, stealth TEXT , survivalcheck BOOL,survival TEXT ,passivewisdom INTEGER , " +
-    "proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER , currenthitpoints TEXT , temporaryhitpoints TEXT ,hitdice TEXT,weapon1 TEXT, atkbonus1 TEXT, " +
-    "dmg1 TEXT,weapon2 TEXT,atkbonus2 TEXT,dmg2 TEXT ,weapon3 TEXT,atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT, " +
+    "proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER , currenthitpoints TEXT , temporaryhitpoints TEXT ,hitdice TEXT,succes1 BOOL,succes2 BOOL,succes3 BOOL, fail1 BOOL, fail2 BOOL, fail3 BOOL ,weapon1 TEXT, atkbonus1 TEXT, " +
+    "dmg1 TEXT, weapon2 TEXT, atkbonus2 TEXT, dmg2 TEXT , weapon3 TEXT, atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT, " +
+    "spellslot1 INTEGER, spellslot2 INTEGER, spellslot3 INTEGER, spellslot4 INTEGER, spellslot5 INTEGER, spellslot6 INTEGER, spellslot7 INTEGER, spellslot8 INTEGER, spellslot9 INTEGER, "+ 
     "personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, features TEXT, FOREIGN KEY(username) REFERENCES users (username))"
 );
 
@@ -200,11 +201,17 @@ app.post("/sheet", (req, res) => {
     charismanumber,
     inspiration,
     proficiencybonus,
+    strstcheck,
     strengthsavingthrow,
+    dexstcheck,
     dexteritysavingthrow,
+    constcheck,
     constitutionsavingthrow,
+    intstcheck,
     intelligencesavingthrow,
+    wisstcheck,
     wisdomsavingthrow,
+    chastcheck,
     charismasavingthrow,
     acrobaticscheck,
     acrobatics,
@@ -250,6 +257,12 @@ app.post("/sheet", (req, res) => {
     currenthitpoints,
     temporaryhitpoints,
     hitdice,
+    succes1,
+    succes2,
+    succes3,
+    fail1,
+    fail2,
+    fail3,
     weapon1,
     atkbonus1,
     dmg1,
@@ -265,14 +278,15 @@ app.post("/sheet", (req, res) => {
     gp,
     pp,
     equipmenttextarea,
+    personality,
     ideals,
     bonds,
     flaws,
   } = req.body;
   db.run(
-    "UPDATE characters SET classlevel = ?, background = ?, race = ?, alignment = ?, experience = ?, strengthmod = ?, strengthnumber = ?, dexmod = ?, dexnumber =?, constitutionmod = ?, constitutionnumber = ?, intelligencemod = ?, intelligencenumber = ?, wisdommod = ?, wisdomnumber = ?, charismamod = ?, charismanumber = ?, inspiration = ?, proficiencybonus = ?, strengthsavingthrow = ?, dexteritysavingthrow = ?, constitutionsavingthrow = ?, intelligencesavingthrow = ?, wisdomsavingthrow = ?, charismasavingthrow = ?, acrobaticscheck = ?, acrobatics = ?, animalhandlingcheck = ?, animalhandling = ?, arcanacheck = ?, arcana = ?, athleticscheck = ?, athletics = ?, deceptioncheck = ?, deception = ?, historycheck = ?, history = ?, insightcheck = ?, insight = ?, intimidationcheck = ?, intimidation = ?, investigationcheck = ?, investigation = ?, medicinecheck = ?, medicine = ?, naturecheck = ?, nature = ?, perceptioncheck = ?, perception = ?, perfomancecheck = ?, perfomance = ?, persuasioncheck = ?, persuasion = ?, religioncheck = ? , religion = ?," +
-      " sleightofhandscheck = ?, sleightofhands = ?, stealthcheck = ?, stealth = ?, survivalcheck = ?, survival = ?, passivewisdom = ?, proficienciestextarea = ?, armor = ?, initiative = ?, speed = ?, currenthitpoints = ?, temporaryhitpoints = ?, hitdice = ?, weapon1 = ?, atkbonus1 = ?, dmg1 = ?, weapon2 = ?, atkbonus2 = ?, dmg2 = ?, weapon3 = ?, atkbonus3 = ?, dmg3 = ?, cp = ?, sp = ?, ep = ?, gp = ?, pp = ?, equipmenttextarea = ?, " +
-      " ideals = ?, bonds = ?, flaws = ?  WHERE name = ?",
+    "UPDATE characters SET classlevel = ?, background = ?, race = ?, alignment = ?, experience = ?, strengthmod = ?, strengthnumber = ?, dexmod = ?, dexnumber =?, constitutionmod = ?, constitutionnumber = ?, intelligencemod = ?, intelligencenumber = ?, wisdommod = ?, wisdomnumber = ?, charismamod = ?, charismanumber = ?, inspiration = ?, proficiencybonus = ?,strstcheck = ?, strengthsavingthrow = ?, dexstcheck = ?, dexteritysavingthrow = ?, constcheck = ?, constitutionsavingthrow = ?, intstcheck=?, intelligencesavingthrow = ?, wisstcheck = ?, wisdomsavingthrow = ?, chastcheck = ?, charismasavingthrow = ?, acrobaticscheck = ?, acrobatics = ?, animalhandlingcheck = ?, animalhandling = ?, arcanacheck = ?, arcana = ?, athleticscheck = ?, athletics = ?, deceptioncheck = ?, deception = ?, historycheck = ?, history = ?, insightcheck = ?, insight = ?, intimidationcheck = ?, intimidation = ?, investigationcheck = ?, investigation = ?, medicinecheck = ?, medicine = ?, naturecheck = ?, nature = ?, perceptioncheck = ?, perception = ?, perfomancecheck = ?, perfomance = ?, persuasioncheck = ?, persuasion = ?, religioncheck = ? , religion = ?," +
+      " sleightofhandscheck = ?, sleightofhands = ?, stealthcheck = ?, stealth = ?, survivalcheck = ?, survival = ?, passivewisdom = ?, proficienciestextarea = ?, armor = ?, initiative = ?, speed = ?, currenthitpoints = ?, temporaryhitpoints = ?, hitdice = ?, succes1=?, succes2=?, succes3 =?, fail1 =?, fail2=?, fail3=?, weapon1 = ?, atkbonus1 = ?, dmg1 = ?, weapon2 = ?, atkbonus2 = ?, dmg2 = ?, weapon3 = ?, atkbonus3 = ?, dmg3 = ?, cp = ?, sp = ?, ep = ?, gp = ?, pp = ?, equipmenttextarea = ?, " +
+      "personality = ? ,ideals = ?, bonds = ?, flaws = ?  WHERE name = ?",
     [
       classlevel,
       background,
@@ -293,11 +307,17 @@ app.post("/sheet", (req, res) => {
       charismanumber,
       inspiration,
       proficiencybonus,
+      strstcheck,
       strengthsavingthrow,
+      dexstcheck,
       dexteritysavingthrow,
+      constcheck,
       constitutionsavingthrow,
+      intstcheck,
       intelligencesavingthrow,
+      wisstcheck,
       wisdomsavingthrow,
+      chastcheck,
       charismasavingthrow,
       acrobaticscheck,
       acrobatics,
@@ -343,6 +363,12 @@ app.post("/sheet", (req, res) => {
       currenthitpoints,
       temporaryhitpoints,
       hitdice,
+      succes1,
+      succes2,
+      succes3,
+      fail1,
+      fail2,
+      fail3,
       weapon1,
       atkbonus1,
       dmg1,
@@ -358,6 +384,7 @@ app.post("/sheet", (req, res) => {
       gp,
       pp,
       equipmenttextarea,
+      personality,
       ideals,
       bonds,
       flaws,
@@ -403,6 +430,7 @@ app.post("/spellsheet", (req, res) => {
     lvl8spells,
     lvl9spells,
   } = req.body;
+
   db.run(
     "UPDATE spellsheet SET spellscastingability = ? , spellsavedc = ? , spellattackbonus = ? , cantrip = ? , lvl1spells = ?, lvl2spells = ?, lvl3spells = ?, lvl4spells = ?, lvl5spells = ?, lvl6spells = ?, lvl7spells = ?, lvl8spells = ?, lvl9spells = ? WHERE name = ?",
     [
