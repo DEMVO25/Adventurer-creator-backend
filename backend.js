@@ -35,7 +35,7 @@ db.run(
     " religion TEXT , sleightofhandscheck BOOL , sleightofhands TEXT , stealthcheck BOOL, stealth TEXT , survivalcheck BOOL,survival TEXT ,passivewisdom INTEGER , " +
     "proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER , currenthitpoints TEXT , temporaryhitpoints TEXT ,hitdice TEXT,succes1 BOOL,succes2 BOOL,succes3 BOOL, fail1 BOOL, fail2 BOOL, fail3 BOOL ,weapon1 TEXT, atkbonus1 TEXT, " +
     "dmg1 TEXT, weapon2 TEXT, atkbonus2 TEXT, dmg2 TEXT , weapon3 TEXT, atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT, " +
-    "spellslot1 INTEGER, spellslot2 INTEGER, spellslot3 INTEGER, spellslot4 INTEGER, spellslot5 INTEGER, spellslot6 INTEGER, spellslot7 INTEGER, spellslot8 INTEGER, spellslot9 INTEGER, "+ 
+    "spellslot1Checkbox TEXT, spellslot2Checkbox TEXT, spellslot3Checkbox TEXT, spellslot4Checkbox TEXT, spellslot5Checkbox TEXT, spellslot6Checkbox TEXT, spellslot7Checkbox TEXT, spellslot8Checkbox TEXT, spellslot9Checkbox TEXT, "+ 
     "personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, features TEXT, FOREIGN KEY(username) REFERENCES users (username))"
 );
 
@@ -278,6 +278,15 @@ app.post("/sheet", (req, res) => {
     gp,
     pp,
     equipmenttextarea,
+    spellslot1Checkbox, // [0,1,0]
+    spellslot2Checkbox, 
+    spellslot3Checkbox, 
+    spellslot4Checkbox, 
+    spellslot5Checkbox, 
+    spellslot6Checkbox,
+    spellslot7Checkbox,
+    spellslot8Checkbox,
+    spellslot9Checkbox,
     personality,
     ideals,
     bonds,
@@ -286,7 +295,7 @@ app.post("/sheet", (req, res) => {
   db.run(
     "UPDATE characters SET classlevel = ?, background = ?, race = ?, alignment = ?, experience = ?, strengthmod = ?, strengthnumber = ?, dexmod = ?, dexnumber =?, constitutionmod = ?, constitutionnumber = ?, intelligencemod = ?, intelligencenumber = ?, wisdommod = ?, wisdomnumber = ?, charismamod = ?, charismanumber = ?, inspiration = ?, proficiencybonus = ?,strstcheck = ?, strengthsavingthrow = ?, dexstcheck = ?, dexteritysavingthrow = ?, constcheck = ?, constitutionsavingthrow = ?, intstcheck=?, intelligencesavingthrow = ?, wisstcheck = ?, wisdomsavingthrow = ?, chastcheck = ?, charismasavingthrow = ?, acrobaticscheck = ?, acrobatics = ?, animalhandlingcheck = ?, animalhandling = ?, arcanacheck = ?, arcana = ?, athleticscheck = ?, athletics = ?, deceptioncheck = ?, deception = ?, historycheck = ?, history = ?, insightcheck = ?, insight = ?, intimidationcheck = ?, intimidation = ?, investigationcheck = ?, investigation = ?, medicinecheck = ?, medicine = ?, naturecheck = ?, nature = ?, perceptioncheck = ?, perception = ?, perfomancecheck = ?, perfomance = ?, persuasioncheck = ?, persuasion = ?, religioncheck = ? , religion = ?," +
       " sleightofhandscheck = ?, sleightofhands = ?, stealthcheck = ?, stealth = ?, survivalcheck = ?, survival = ?, passivewisdom = ?, proficienciestextarea = ?, armor = ?, initiative = ?, speed = ?, currenthitpoints = ?, temporaryhitpoints = ?, hitdice = ?, succes1=?, succes2=?, succes3 =?, fail1 =?, fail2=?, fail3=?, weapon1 = ?, atkbonus1 = ?, dmg1 = ?, weapon2 = ?, atkbonus2 = ?, dmg2 = ?, weapon3 = ?, atkbonus3 = ?, dmg3 = ?, cp = ?, sp = ?, ep = ?, gp = ?, pp = ?, equipmenttextarea = ?, " +
-      "personality = ? ,ideals = ?, bonds = ?, flaws = ?  WHERE name = ?",
+      "spellslot1Checkbox = ? ,spellslot2Checkbox = ? ,spellslot3Checkbox = ? ,spellslot4Checkbox = ? ,spellslot5Checkbox = ? ,spellslot6Checkbox = ? ,spellslot7Checkbox = ? ,spellslot8Checkbox = ? ,spellslot9Checkbox = ? , personality = ? ,ideals = ?, bonds = ?, flaws = ?  WHERE name = ?",
     [
       classlevel,
       background,
@@ -384,6 +393,15 @@ app.post("/sheet", (req, res) => {
       gp,
       pp,
       equipmenttextarea,
+      JSON.stringify(spellslot1Checkbox),
+      JSON.stringify(spellslot2Checkbox),
+      JSON.stringify(spellslot3Checkbox),
+      JSON.stringify(spellslot4Checkbox),
+      JSON.stringify(spellslot5Checkbox),
+      JSON.stringify(spellslot6Checkbox),
+      JSON.stringify(spellslot7Checkbox),
+      JSON.stringify(spellslot8Checkbox),
+      JSON.stringify(spellslot9Checkbox),
       personality,
       ideals,
       bonds,
@@ -408,7 +426,8 @@ app.get("/sheet/:name", (req, res) => {
       console.error("Database error on SELECT:", err);
       res.status(500).send({ message: "Database error" });
     } else {
-      res.send(rows);
+      console.log(rows.spellslot1Checkbox);
+      res.send({...rows, spellslot1Checkbox: JSON.parse(rows.spellslot1Checkbox), spellslot2Checkbox: JSON.parse(rows.spellslot2Checkbox), spellslot3Checkbox: JSON.parse(rows.spellslot3Checkbox), spellslot4Checkbox: JSON.parse(rows.spellslot4Checkbox), spellslot5Checkbox: JSON.parse(rows.spellslot5Checkbox), spellslot6Checkbox: JSON.parse(rows.spellslot6Checkbox), spellslot7Checkbox: JSON.parse(rows.spellslot7Checkbox), spellslot8Checkbox: JSON.parse(rows.spellslot8Checkbox), spellslot9Checkbox: JSON.parse(rows.spellslot9Checkbox)});
     }
   });
 });
@@ -490,15 +509,14 @@ app.get("/spellsheet/:name", (req, res) => {
 app.post("/passwordreset/:username", async (req, res) => {
   const username = req.params.username;
   const resetToken = crypto.randomInt(100000, 999999).toString();
-  const resetTokenExpires = Date.now() + 15 * 60 * 1000; // 15 mins expiry
-
+  const resetTokenExpires = Date.now() + 1 * 60 * 1000; 
   db.get(
     "SELECT email FROM users WHERE username = ?",
     [username],
     async (err, row) => {
       if (err) return res.status(500).send({ message: "Database error" });
       if (!row) return res.status(404).send({ message: "Username not found" });
-
+      
       db.run(
         "UPDATE users SET resetToken = ?, resetTokenExpires = ? WHERE username = ?",
         [resetToken, resetTokenExpires, username],
@@ -537,7 +555,6 @@ app.post("/passwordreset/:username", async (req, res) => {
 
 app.post("/verifyotp", async (req, res) => {
   const { username, otp } = req.body;
-
   db.get(
     "SELECT resetToken, resetTokenExpires FROM users WHERE username = ?",
     [username],
@@ -550,8 +567,9 @@ app.post("/verifyotp", async (req, res) => {
       if (row.resetToken !== otp) {
         return res.status(400).send({ message: "Incorrect OTP" });
       }
-
+      
       res.send({ message: "OTP verified successfully", success: true });
+      
     }
   );
 });
@@ -560,7 +578,7 @@ app.post("/updatepassword", async (req, res) => {
   const { username, newPassword } = req.body;
 
   if (!newPassword) {
-    return res.status(400).send({ message: "New password is required" }); // 🚨 Prevents undefined errors
+    return res.status(400).send({ message: "New password is required" });
   }
 
   try {
