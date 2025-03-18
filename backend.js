@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
+
 const app = express();
 app.use(express.json());
 
@@ -35,7 +36,7 @@ db.run(
     " religion TEXT , sleightofhandscheck BOOL , sleightofhands TEXT , stealthcheck BOOL, stealth TEXT , survivalcheck BOOL,survival TEXT ,passivewisdom INTEGER , " +
     "proficienciestextarea TEXT ,armor INTEGER ,initiative TEXT ,speed INTEGER , currenthitpoints TEXT , temporaryhitpoints TEXT ,hitdice TEXT,succes1 BOOL,succes2 BOOL,succes3 BOOL, fail1 BOOL, fail2 BOOL, fail3 BOOL ,weapon1 TEXT, atkbonus1 TEXT, " +
     "dmg1 TEXT, weapon2 TEXT, atkbonus2 TEXT, dmg2 TEXT , weapon3 TEXT, atkbonus3 TEXT,dmg3 TEXT,cp INTEGER,sp INTEGER,ep INTEGER,gp INTEGER,pp INTEGER,equipmenttextarea TEXT, " +
-    "spellslot1Checkbox TEXT, spellslot2Checkbox TEXT, spellslot3Checkbox TEXT, spellslot4Checkbox TEXT, spellslot5Checkbox TEXT, spellslot6Checkbox TEXT, spellslot7Checkbox TEXT, spellslot8Checkbox TEXT, spellslot9Checkbox TEXT, "+ 
+    "spellslot1Checkbox TEXT, spellslot2Checkbox TEXT, spellslot3Checkbox TEXT, spellslot4Checkbox TEXT, spellslot5Checkbox TEXT, spellslot6Checkbox TEXT, spellslot7Checkbox TEXT, spellslot8Checkbox TEXT, spellslot9Checkbox TEXT, " +
     "personality TEXT,ideals TEXT,bonds TEXT,flaws TEXT, features TEXT, FOREIGN KEY(username) REFERENCES users (username))"
 );
 
@@ -279,10 +280,10 @@ app.post("/sheet", (req, res) => {
     pp,
     equipmenttextarea,
     spellslot1Checkbox, // [0,1,0]
-    spellslot2Checkbox, 
-    spellslot3Checkbox, 
-    spellslot4Checkbox, 
-    spellslot5Checkbox, 
+    spellslot2Checkbox,
+    spellslot3Checkbox,
+    spellslot4Checkbox,
+    spellslot5Checkbox,
     spellslot6Checkbox,
     spellslot7Checkbox,
     spellslot8Checkbox,
@@ -426,8 +427,18 @@ app.get("/sheet/:name", (req, res) => {
       console.error("Database error on SELECT:", err);
       res.status(500).send({ message: "Database error" });
     } else {
-      console.log(rows.spellslot1Checkbox);
-      res.send({...rows, spellslot1Checkbox: JSON.parse(rows.spellslot1Checkbox), spellslot2Checkbox: JSON.parse(rows.spellslot2Checkbox), spellslot3Checkbox: JSON.parse(rows.spellslot3Checkbox), spellslot4Checkbox: JSON.parse(rows.spellslot4Checkbox), spellslot5Checkbox: JSON.parse(rows.spellslot5Checkbox), spellslot6Checkbox: JSON.parse(rows.spellslot6Checkbox), spellslot7Checkbox: JSON.parse(rows.spellslot7Checkbox), spellslot8Checkbox: JSON.parse(rows.spellslot8Checkbox), spellslot9Checkbox: JSON.parse(rows.spellslot9Checkbox)});
+      res.send({
+        ...rows,
+        spellslot1Checkbox: JSON.parse(rows.spellslot1Checkbox),
+        spellslot2Checkbox: JSON.parse(rows.spellslot2Checkbox),
+        spellslot3Checkbox: JSON.parse(rows.spellslot3Checkbox),
+        spellslot4Checkbox: JSON.parse(rows.spellslot4Checkbox),
+        spellslot5Checkbox: JSON.parse(rows.spellslot5Checkbox),
+        spellslot6Checkbox: JSON.parse(rows.spellslot6Checkbox),
+        spellslot7Checkbox: JSON.parse(rows.spellslot7Checkbox),
+        spellslot8Checkbox: JSON.parse(rows.spellslot8Checkbox),
+        spellslot9Checkbox: JSON.parse(rows.spellslot9Checkbox),
+      });
     }
   });
 });
@@ -509,14 +520,14 @@ app.get("/spellsheet/:name", (req, res) => {
 app.post("/passwordreset/:username", async (req, res) => {
   const username = req.params.username;
   const resetToken = crypto.randomInt(100000, 999999).toString();
-  const resetTokenExpires = Date.now() + 1 * 60 * 1000; 
+  const resetTokenExpires = Date.now() + 1 * 60 * 1000;
   db.get(
     "SELECT email FROM users WHERE username = ?",
     [username],
     async (err, row) => {
       if (err) return res.status(500).send({ message: "Database error" });
       if (!row) return res.status(404).send({ message: "Username not found" });
-      
+
       db.run(
         "UPDATE users SET resetToken = ?, resetTokenExpires = ? WHERE username = ?",
         [resetToken, resetTokenExpires, username],
@@ -545,7 +556,7 @@ app.post("/passwordreset/:username", async (req, res) => {
               message: "OTP sent to email",
               success: true,
               resetToken,
-            }); // ⚠️ Remove resetToken in production
+            });
           });
         }
       );
@@ -567,9 +578,7 @@ app.post("/verifyotp", async (req, res) => {
       if (row.resetToken !== otp) {
         return res.status(400).send({ message: "Incorrect OTP" });
       }
-      
       res.send({ message: "OTP verified successfully", success: true });
-      
     }
   );
 });
@@ -584,13 +593,15 @@ app.post("/updatepassword", async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    db.run("UPDATE users SET password = ?, resetToken = NULL, resetTokenExpires = NULL WHERE username = ?", 
-      [hashedPassword, username], 
+    db.run(
+      "UPDATE users SET password = ?, resetToken = NULL, resetTokenExpires = NULL WHERE username = ?",
+      [hashedPassword, username],
       (err) => {
         if (err) return res.status(500).send({ message: "Database error" });
 
         res.send({ message: "Password updated successfully", success: true });
-    });
+      }
+    );
   } catch (error) {
     console.error("Error hashing password:", error);
     res.status(500).send({ message: "Server error while updating password" });
