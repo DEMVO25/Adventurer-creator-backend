@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
+import jwt from "jsonwebtoken";
 
 const app = express();
 app.use(express.json());
@@ -22,7 +23,7 @@ const transporter = nodemailer.createTransport({
 });
 
 db.run(
-  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL, resetToken TEXT, resetTokenExpires INTEGER)"
+  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL, resetToken TEXT, resetTokenExpires INTEGER, jwtToken TEXT, jwtTokenExpires INTEGER)",
 );
 db.run(
   "CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT, background TEXT, race TEXT, alignment TEXT, experience INTEGER," +
