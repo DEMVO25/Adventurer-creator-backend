@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
 });
 
 db.run(
-  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL, resetToken TEXT, resetTokenExpires INTEGER, jwtToken TEXT, jwtTokenExpires INTEGER)",
+  "CREATE TABLE IF NOT EXISTS users(email text NOT NULL, username text NOT NULL UNIQUE, id INTEGER PRIMARY KEY AUTOINCREMENT, password text NOT NULL, resetToken TEXT, resetTokenExpires INTEGER)"
 );
 db.run(
   "CREATE TABLE IF NOT EXISTS characters(name text UNIQUE, classlevel TEXT, background TEXT, race TEXT, alignment TEXT, experience INTEGER," +
@@ -66,7 +66,7 @@ app.post("/register", (req, res) => {
             if (err) {
               res.status(500).send({ message: "Database error" });
             } else {
-              res.send({ message: "User  created successfully" });
+              res.send({ message: "User created successfully" });
             }
           }
         );
@@ -76,7 +76,9 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  const jwtSecretKey = "123";
   const { username, password } = req.body;
+
   db.get("SELECT * FROM users WHERE username = ?", [username], (err, row) => {
     if (err) {
       res.status(500).send({ message: "Database error" });
@@ -85,10 +87,28 @@ app.post("/login", (req, res) => {
     } else {
       const isMatch = bcrypt.compareSync(password, row.password);
       if (isMatch) {
-        res.send({ authenticated: true });
+        let data = {
+          username,
+          signInTime: Date.now(),
+        };
+
+        const token = jwt.sign(data, jwtSecretKey);
+        res.status(200).json({ message: "success", token, username });
       } else {
         res.send({ authenticated: false });
       }
+    }
+  });
+});
+
+app.post("/verifyjwt", (req, res) => {
+  const { token } = req.body;
+  const jwtSecretKey = "123";
+  jwt.verify(token, jwtSecretKey, (err, decoded) => {
+    if (err) {
+      res.status(401).send({ message: "Invalid token" });
+    } else {
+      res.status(200).send({ authenticated: true, username: decoded.username });
     }
   });
 });
@@ -293,11 +313,12 @@ app.post("/sheet", (req, res) => {
     ideals,
     bonds,
     flaws,
+    features,
   } = req.body;
   db.run(
     "UPDATE characters SET classlevel = ?, background = ?, race = ?, alignment = ?, experience = ?, strengthmod = ?, strengthnumber = ?, dexmod = ?, dexnumber =?, constitutionmod = ?, constitutionnumber = ?, intelligencemod = ?, intelligencenumber = ?, wisdommod = ?, wisdomnumber = ?, charismamod = ?, charismanumber = ?, inspiration = ?, proficiencybonus = ?,strstcheck = ?, strengthsavingthrow = ?, dexstcheck = ?, dexteritysavingthrow = ?, constcheck = ?, constitutionsavingthrow = ?, intstcheck=?, intelligencesavingthrow = ?, wisstcheck = ?, wisdomsavingthrow = ?, chastcheck = ?, charismasavingthrow = ?, acrobaticscheck = ?, acrobatics = ?, animalhandlingcheck = ?, animalhandling = ?, arcanacheck = ?, arcana = ?, athleticscheck = ?, athletics = ?, deceptioncheck = ?, deception = ?, historycheck = ?, history = ?, insightcheck = ?, insight = ?, intimidationcheck = ?, intimidation = ?, investigationcheck = ?, investigation = ?, medicinecheck = ?, medicine = ?, naturecheck = ?, nature = ?, perceptioncheck = ?, perception = ?, perfomancecheck = ?, perfomance = ?, persuasioncheck = ?, persuasion = ?, religioncheck = ? , religion = ?," +
       " sleightofhandscheck = ?, sleightofhands = ?, stealthcheck = ?, stealth = ?, survivalcheck = ?, survival = ?, passivewisdom = ?, proficienciestextarea = ?, armor = ?, initiative = ?, speed = ?, currenthitpoints = ?, temporaryhitpoints = ?, hitdice = ?, succes1=?, succes2=?, succes3 =?, fail1 =?, fail2=?, fail3=?, weapon1 = ?, atkbonus1 = ?, dmg1 = ?, weapon2 = ?, atkbonus2 = ?, dmg2 = ?, weapon3 = ?, atkbonus3 = ?, dmg3 = ?, cp = ?, sp = ?, ep = ?, gp = ?, pp = ?, equipmenttextarea = ?, " +
-      "spellslot1Checkbox = ? ,spellslot2Checkbox = ? ,spellslot3Checkbox = ? ,spellslot4Checkbox = ? ,spellslot5Checkbox = ? ,spellslot6Checkbox = ? ,spellslot7Checkbox = ? ,spellslot8Checkbox = ? ,spellslot9Checkbox = ? , personality = ? ,ideals = ?, bonds = ?, flaws = ?  WHERE name = ?",
+      "spellslot1Checkbox = ? ,spellslot2Checkbox = ? ,spellslot3Checkbox = ? ,spellslot4Checkbox = ? ,spellslot5Checkbox = ? ,spellslot6Checkbox = ? ,spellslot7Checkbox = ? ,spellslot8Checkbox = ? ,spellslot9Checkbox = ? , personality = ? ,ideals = ?, bonds = ?, flaws = ?, features = ?  WHERE name = ?",
     [
       classlevel,
       background,
@@ -408,6 +429,7 @@ app.post("/sheet", (req, res) => {
       ideals,
       bonds,
       flaws,
+      features,
       name,
     ],
     (err) => {
